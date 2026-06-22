@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DCF Valuation — Comparison</title>
+<style>
+  :root { --pos:#16a34a; --neg:#dc2626; --ink:#111827; --muted:#6b7280; --line:#e5e7eb; }
+  body { font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+         color: var(--ink); margin: 0; background: #f9fafb; line-height: 1.5; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 32px 24px 64px; }
+  h1 { font-size: 1.6rem; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  section { background:#fff; border:1px solid var(--line); border-radius:12px;
+            padding: 20px 24px; margin-bottom: 22px; }
+  h2 { font-size: 1.1rem; margin: 0 0 14px; }
+  img { max-width: 100%; height: auto; display:block; margin: 0 auto; }
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  th, td { text-align: right; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th:first-child, td:first-child { text-align: left; }
+  thead th { color: var(--muted); font-weight: 600; }
+  a { color: #2563eb; text-decoration: none; }
+  .pos { color: var(--pos); } .neg { color: var(--neg); }
+  footer { color: var(--muted); font-size: .8rem; text-align:center; margin-top: 16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>DCF Valuation — Comparison</h1>
+  <p class="sub">{{ rows|length }} stocks · generated {{ generated_at }} · data: SEC EDGAR + Yahoo Finance</p>
+
+  <section>
+    <h2>Summary</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Ticker</th><th>Intrinsic / share</th><th>Market price</th>
+          <th>Upside</th><th>WACC</th><th>Init. growth</th><th>Report</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td>{{ r.ticker }}</td>
+          <td>${{ "%.2f"|format(r.intrinsic) }}</td>
+          <td>{% if r.price %}${{ "%.2f"|format(r.price) }}{% else %}—{% endif %}</td>
+          <td class="{{ 'pos' if (r.upside is not none and r.upside >= 0) else 'neg' }}">
+            {% if r.upside is not none %}{{ "%+.1f%%"|format(r.upside * 100) }}{% else %}—{% endif %}
+          </td>
+          <td>{{ "%.2f%%"|format(r.wacc * 100) }}</td>
+          <td>{{ "%.1f%%"|format(r.initial_growth * 100) }}</td>
+          <td>{% if r.filename %}<a href="{{ r.filename }}">open</a>{% else %}—{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Upside / downside vs. market</h2>
+    <img src="{{ comparison_chart }}" alt="Comparison football field">
+  </section>
+
+  {% if errors %}
+  <section>
+    <h2>Could not value</h2>
+    <table>
+      <thead><tr><th>Ticker</th><th>Reason</th></tr></thead>
+      <tbody>
+        {% for e in errors %}<tr><td>{{ e.ticker }}</td><td style="text-align:left">{{ e.error }}</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+
+  <footer>Educational use only — not investment advice.</footer>
+</div>
+</body>
+</html>

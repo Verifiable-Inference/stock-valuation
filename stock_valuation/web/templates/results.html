@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DCF Valuation — Results</title>
+<style>
+  :root { --accent:#2563eb; --pos:#16a34a; --neg:#dc2626; --ink:#111827;
+          --muted:#6b7280; --line:#e5e7eb; --bg:#f9fafb; }
+  * { box-sizing:border-box; }
+  html, body { height:100%; margin:0; }
+  body { font-family:-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+         color:var(--ink); background:var(--bg); display:flex; flex-direction:column; height:100vh; }
+  header { padding:14px 22px; background:#fff; border-bottom:1px solid var(--line);
+           display:flex; align-items:center; gap:16px; flex:0 0 auto; }
+  header h1 { font-size:1.15rem; margin:0; }
+  header .meta { color:var(--muted); font-size:.82rem; }
+  header a.new { margin-left:auto; color:var(--accent); text-decoration:none; font-weight:600; font-size:.9rem; }
+  .body { display:flex; flex:1 1 auto; min-height:0; }
+  nav { flex:0 0 240px; background:#fff; border-right:1px solid var(--line);
+        overflow-y:auto; padding:14px 0; }
+  .navlabel { font-size:.72rem; text-transform:uppercase; letter-spacing:.05em;
+              color:var(--muted); padding:8px 18px 4px; }
+  .item { display:flex; justify-content:space-between; align-items:center; gap:8px;
+          padding:11px 18px; cursor:pointer; border-left:3px solid transparent; font-size:.92rem; }
+  .item:hover { background:var(--bg); }
+  .item.active { background:#eff6ff; border-left-color:var(--accent); font-weight:600; }
+  .item .up { font-size:.82rem; }
+  .pos { color:var(--pos); } .neg { color:var(--neg); }
+  .item.err { color:var(--neg); cursor:default; }
+  .item.err:hover { background:transparent; }
+  main { flex:1 1 auto; min-width:0; position:relative; }
+  iframe { width:100%; height:100%; border:0; background:#fff; }
+  #errbox { display:none; width:100%; height:100%; align-items:center; justify-content:center; padding:24px; }
+  .errcard { max-width:560px; background:#fef2f2; border:1px solid #fecaca; border-radius:14px; padding:28px 32px; }
+  .errcard h2 { margin:0 0 10px; color:#b91c1c; font-size:1.2rem; }
+  .errcard p { margin:0; color:#7f1d1d; font-size:.98rem; line-height:1.55; }
+</style>
+</head>
+<body>
+<header>
+  <h1>DCF Valuation</h1>
+  <span class="meta">generated {{ generated_at }}</span>
+  <a href="{{ url_for('docs') }}" style="color:var(--muted);text-decoration:none;font-size:.85rem;">Documentation</a>
+  <a class="new" href="{{ url_for('index') }}">+ New valuation</a>
+</header>
+<div class="body">
+  <nav id="nav">
+    {% if has_comparison %}
+    <div class="navlabel">Overview</div>
+    <div class="item" data-src="{{ url_for('report', run_id=run_id, ticker='_comparison') }}">
+      <span>Comparison</span>
+    </div>
+    {% endif %}
+
+    {% if summary %}
+    <div class="navlabel">Valued</div>
+    {% for r in summary %}
+    <div class="item" data-src="{{ url_for('report', run_id=run_id, ticker=r.ticker) }}">
+      <span>{{ r.ticker }} · ${{ "%.0f"|format(r.intrinsic) }}</span>
+      {% if r.upside is not none %}
+      <span class="up {{ 'pos' if r.upside >= 0 else 'neg' }}">{{ "%+.0f%%"|format(r.upside * 100) }}</span>
+      {% endif %}
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if errors %}
+    <div class="navlabel">Could not value</div>
+    {% for e in errors %}
+    <div class="item err" data-error="{{ e.error }}"><span>{{ e.ticker }} ⚠</span></div>
+    {% endfor %}
+    {% endif %}
+  </nav>
+  <main>
+    <iframe id="view" name="view" src="about:blank"></iframe>
+    <div id="errbox">
+      <div class="errcard">
+        <h2 id="errtitle">Could not value</h2>
+        <p id="errmsg"></p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  const reportItems = document.querySelectorAll('.item[data-src]');
+  const errorItems = document.querySelectorAll('.item[data-error]');
+  const allItems = document.querySelectorAll('.item[data-src], .item[data-error]');
+  const view = document.getElementById('view');
+  const errbox = document.getElementById('errbox');
+
+  function clearActive() { allItems.forEach(i => i.classList.remove('active')); }
+
+  function showReport(el) {
+    clearActive(); el.classList.add('active');
+    errbox.style.display = 'none';
+    view.style.display = 'block';
+    view.src = el.dataset.src;
+  }
+  function showError(el) {
+    clearActive(); el.classList.add('active');
+    view.style.display = 'none';
+    errbox.style.display = 'flex';
+    document.getElementById('errtitle').textContent = el.textContent.trim().replace(' ⚠','') + ' — could not value';
+    document.getElementById('errmsg').textContent = el.dataset.error;
+  }
+  reportItems.forEach(el => el.addEventListener('click', () => showReport(el)));
+  errorItems.forEach(el => el.addEventListener('click', () => showError(el)));
+
+  if (reportItems.length) showReport(reportItems[0]);   // default to a valued stock
+  else if (errorItems.length) showError(errorItems[0]); // or the first error
+</script>
+</body>
+</html>

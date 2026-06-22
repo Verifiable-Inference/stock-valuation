@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DCF Valuation — Documentation</title>
+<style>
+  :root { --accent:#2563eb; --ink:#111827; --muted:#6b7280; --line:#e5e7eb; --bg:#f9fafb; }
+  * { box-sizing:border-box; }
+  body { font-family:-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+         color:var(--ink); margin:0; background:var(--bg); line-height:1.6; }
+  header { padding:14px 22px; background:#fff; border-bottom:1px solid var(--line);
+           display:flex; align-items:center; gap:16px; position:sticky; top:0; z-index:10; }
+  header h1 { font-size:1.15rem; margin:0; }
+  header a.back { margin-left:auto; color:var(--accent); text-decoration:none; font-weight:600; font-size:.9rem; }
+
+  .layout { display:flex; min-height:calc(100vh - 53px); }
+
+  /* Sidebar TOC */
+  aside { flex:0 0 220px; padding:28px 0 40px; background:#fff; border-right:1px solid var(--line);
+          position:sticky; top:53px; height:calc(100vh - 53px); overflow-y:auto; }
+  aside .toc-label { font-size:.7rem; text-transform:uppercase; letter-spacing:.06em;
+                     color:var(--muted); padding:14px 18px 4px; }
+  aside a { display:block; padding:7px 18px; color:var(--ink); text-decoration:none;
+             font-size:.86rem; border-left:3px solid transparent; }
+  aside a:hover { background:var(--bg); color:var(--accent); }
+  aside a.active { border-left-color:var(--accent); color:var(--accent); font-weight:600;
+                   background:#eff6ff; }
+
+  /* Main content */
+  .content { flex:1 1 auto; padding:48px 56px 80px; max-width:860px; }
+  @media(max-width:700px){ .content{ padding:28px 18px 60px; } aside{ display:none; } }
+
+  h2 { font-size:1.55rem; margin:56px 0 10px; padding-top:8px; border-top:2px solid var(--line); }
+  h2:first-of-type { margin-top:0; border-top:none; }
+  h3 { font-size:1.1rem; margin:36px 0 8px; color:var(--accent); }
+  p { margin:0 0 14px; }
+  ul { margin:0 0 14px 1.2em; padding:0; }
+  li { margin-bottom:5px; }
+  code { background:#f1f5f9; border:1px solid var(--line); border-radius:4px;
+         padding:1px 6px; font-size:.88em; font-family:ui-monospace, monospace; }
+  .default-tag { display:inline-block; background:#eff6ff; color:var(--accent);
+                 border:1px solid #bfdbfe; border-radius:5px; font-size:.78rem;
+                 font-weight:700; padding:1px 8px; margin-left:8px; vertical-align:middle; }
+  .warn-tag { display:inline-block; background:#fefce8; color:#854d0e;
+              border:1px solid #fde68a; border-radius:5px; font-size:.78rem;
+              font-weight:700; padding:1px 8px; margin-left:8px; vertical-align:middle; }
+  .assumption-card { background:#fff; border:1px solid var(--line); border-radius:12px;
+                     padding:20px 24px; margin-bottom:20px; }
+  .assumption-card h3 { margin:0 0 10px; font-size:1rem; color:var(--ink); }
+  .chart-card { background:#fff; border:1px solid var(--line); border-radius:12px;
+                padding:20px 24px; margin-bottom:20px; }
+  .chart-card h3 { margin:0 0 10px; font-size:1rem; color:var(--ink); }
+  .row { display:flex; gap:12px; align-items:baseline; flex-wrap:wrap; margin-bottom:6px; }
+  .pill { border-radius:5px; font-size:.78rem; font-weight:700; padding:2px 9px;
+          border:1px solid; display:inline-block; }
+  .pill-blue { background:#eff6ff; color:var(--accent); border-color:#bfdbfe; }
+  .pill-green { background:#f0fdf4; color:#15803d; border-color:#bbf7d0; }
+  .pill-amber { background:#fefce8; color:#854d0e; border-color:#fde68a; }
+  .formula { background:#f8fafc; border:1px solid var(--line); border-radius:8px;
+             padding:12px 16px; font-family:ui-monospace,monospace; font-size:.9rem;
+             margin:10px 0 14px; overflow-x:auto; }
+  .lead { font-size:1.07rem; color:var(--muted); margin-bottom:32px; line-height:1.65; }
+  .pipeline { counter-reset:step; list-style:none; margin:0 0 14px; padding:0; }
+  .pipeline li { counter-increment:step; padding:10px 14px 10px 48px; position:relative;
+                 border-left:2px solid var(--line); margin-left:20px; margin-bottom:4px; }
+  .pipeline li::before { content:counter(step); position:absolute; left:-14px; top:8px;
+                          width:26px; height:26px; border-radius:50%; background:var(--accent);
+                          color:#fff; font-size:.78rem; font-weight:700; display:flex;
+                          align-items:center; justify-content:center; }
+  .limit-box { background:#fef2f2; border:1px solid #fecaca; border-radius:10px;
+               padding:16px 20px; margin-top:8px; }
+  .limit-box h3 { color:#b91c1c; margin:0 0 8px; font-size:.95rem; }
+  footer { color:var(--muted); font-size:.8rem; text-align:center; padding:18px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>DCF Stock Valuation</h1>
+  <span style="color:var(--muted);font-size:.85rem;">Documentation</span>
+  <a class="back" href="{{ url_for('index') }}">← Back to valuation</a>
+</header>
+
+<div class="layout">
+  <!-- Sidebar table of contents -->
+  <aside id="toc">
+    <div class="toc-label">Overview</div>
+    <a href="#what-is-this">What this tool does</a>
+    <a href="#pipeline">How it works</a>
+    <div class="toc-label">Assumptions</div>
+    <a href="#projection-years">Forecast years</a>
+    <a href="#terminal-growth">Terminal growth</a>
+    <a href="#erp">Equity risk premium</a>
+    <a href="#risk-free">Risk-free rate</a>
+    <a href="#beta">Beta</a>
+    <a href="#wacc">WACC</a>
+    <a href="#tax-rate">Tax rate</a>
+    <a href="#base-fcf-method">Base FCF method</a>
+    <a href="#base-fcf-years">Base FCF years</a>
+    <a href="#growth-override">Initial growth</a>
+    <a href="#guardrails">Growth guardrails</a>
+    <a href="#history-years">History years</a>
+    <a href="#fallbacks">Fallbacks</a>
+    <div class="toc-label">Charts</div>
+    <a href="#chart-history">Historical revenue &amp; FCF</a>
+    <a href="#chart-projection">Projected FCF vs. PV</a>
+    <a href="#chart-bridge">EV → Equity bridge</a>
+    <a href="#chart-sensitivity">Sensitivity heatmap</a>
+    <a href="#chart-price">Price vs. intrinsic value</a>
+    <a href="#chart-comparison">Comparison chart</a>
+    <div class="toc-label">Limits</div>
+    <a href="#limitations">When not to trust it</a>
+  </aside>
+
+  <div class="content">
+
+    <!-- ── Overview ────────────────────────────────────────────── -->
+    <h2 id="what-is-this">What This Tool Does</h2>
+    <p class="lead">
+      This tool computes the <strong>intrinsic (fair) value</strong> of a stock using a
+      Discounted Cash Flow (DCF) model. The core idea: a business is worth the sum of all
+      the cash it will generate in the future, adjusted for the fact that a dollar received
+      ten years from now is worth less than a dollar today.
+    </p>
+    <p>
+      Data comes from two sources: SEC EDGAR for up to 10 years of audited annual 10-K
+      financials, and Yahoo Finance for live price, beta, market cap, and the 10-year
+      Treasury yield. The output is a fair-value estimate per share that you can compare
+      against the current market price.
+    </p>
+    <p>
+      <strong>What it does not do:</strong> predict stock prices, account for sentiment or
+      momentum, or value financial companies (banks, insurers) — those require fundamentally
+      different models.
+    </p>
+
+    <!-- ── Pipeline ─────────────────────────────────────────────── -->
+    <h2 id="pipeline">How It Works</h2>
+    <ol class="pipeline">
+      <li><strong>Data pull</strong> — 10 years of annual 10-K filings from SEC EDGAR, plus live price, beta, market cap, and the 10-year Treasury yield from Yahoo Finance.</li>
+      <li><strong>FCF history</strong> — Computes unlevered free cash flow for each historical year: <code>EBIT × (1 − tax) + D&amp;A − CapEx − ΔNWC</code>. Falls back to <code>OCF − CapEx</code> when EBIT is unavailable.</li>
+      <li><strong>WACC</strong> — Builds the discount rate from first principles: CAPM cost of equity + after-tax cost of debt, weighted by the company's actual capital structure.</li>
+      <li><strong>Projection</strong> — Seeds growth from the historical FCF CAGR, clamps it to a sane band, then linearly fades it toward the terminal growth rate over the forecast horizon.</li>
+      <li><strong>DCF</strong> — Discounts each projected year's FCF to present value, adds a Gordon-growth terminal value, subtracts net debt, divides by shares → intrinsic value per share.</li>
+      <li><strong>Sensitivity</strong> — Re-runs the DCF across 25 combinations of WACC and terminal growth to show how the answer shifts under different assumptions.</li>
+      <li><strong>Report</strong> — Renders a self-contained HTML page with all charts and intermediate figures.</li>
+    </ol>
+
+    <div class="formula">
+      PV = Σ FCF<sub>t</sub> / (1+r)<sup>t</sup>  +  TV / (1+r)<sup>n</sup>
+      <br><br>
+      where  r = WACC,  n = forecast horizon,  TV = FCF<sub>n</sub>×(1+g) / (WACC−g)
+    </div>
+
+    <!-- ── Assumptions ──────────────────────────────────────────── -->
+    <h2 id="assumptions">Assumptions</h2>
+    <p>
+      Every assumption below has a default baked into <code>config.yaml</code>. All of them
+      can be overridden in the <em>Assumptions</em> panel on the form, on the command line,
+      or per-ticker in the <code>overrides</code> block of <code>config.yaml</code>.
+    </p>
+
+    <!-- Forecast years -->
+    <div class="assumption-card" id="projection-years">
+      <div class="row">
+        <h3 style="margin:0;">Forecast Years (n)</h3>
+        <span class="pill pill-blue">Default: 5</span>
+      </div>
+      <p>
+        The number of years for which cash flows are projected explicitly before collapsing
+        into a terminal value. <strong>Five years</strong> is the standard in equity research —
+        short enough that projections stay grounded in current trends, long enough to capture a
+        meaningful fraction of value before the terminal value dominates.
+      </p>
+      <p>
+        <strong>When to change it:</strong> Use 7–10 years for companies where the investment
+        thesis plays out slowly (e.g., infrastructure, drug pipelines). Use 3 years when near-term
+        visibility is poor or the business is in rapid transition.
+      </p>
+    </div>
+
+    <!-- Terminal growth -->
+    <div class="assumption-card" id="terminal-growth">
+      <div class="row">
+        <h3 style="margin:0;">Terminal Growth Rate</h3>
+        <span class="pill pill-blue">Default: 2.5%</span>
+        <span class="pill pill-amber">Most impactful assumption</span>
+      </div>
+      <p>
+        The assumed perpetual growth rate of free cash flow once the explicit forecast ends.
+        This is the <strong>single most impactful assumption</strong> in any DCF — small changes
+        here move the fair value significantly (as the sensitivity heatmap makes visible).
+      </p>
+      <p>
+        The default of <strong>2.5%</strong> approximates long-run nominal GDP growth. It is
+        derived from a conservative blend: roughly 2% real GDP growth + a modest inflation
+        contribution, applied to FCF (which tends to grow more slowly than revenue or GDP at
+        the firm level for mature businesses).
+      </p>
+      <p>
+        <strong>Rule of thumb:</strong> No company can grow faster than the overall economy
+        forever — if terminal growth exceeds GDP growth (~4% nominal historically), the
+        company would eventually become larger than the economy itself. Keep this between
+        <strong>1.5% and 3.5%</strong> for most businesses. The model will refuse to run if
+        terminal growth meets or exceeds WACC (the Gordon formula becomes undefined).
+      </p>
+    </div>
+
+    <!-- ERP -->
+    <div class="assumption-card" id="erp">
+      <div class="row">
+        <h3 style="margin:0;">Equity Risk Premium (ERP)</h3>
+        <span class="pill pill-blue">Default: 5.0%</span>
+      </div>
+      <p>
+        The additional return investors demand for holding equities versus a risk-free Treasury
+        bond. It enters the CAPM formula as:
+      </p>
+      <div class="formula">Cost of Equity = Risk-free rate + Beta × ERP</div>
+      <p>
+        The <strong>5.0% default</strong> is the long-run historical equity risk premium for US
+        equities, consistent with Damodaran's widely-cited estimates. It is slightly conservative
+        relative to current implied ERP (which fluctuates with market valuations) but robust over
+        longer holding periods.
+      </p>
+      <p>
+        Raising this to 5.5–6% increases the cost of equity and lowers fair value. Lowering it
+        to 4% does the opposite. In high-rate environments the implied ERP tends to compress
+        (since bonds become more competitive), warranting a lower value here.
+      </p>
+    </div>
+
+    <!-- Risk-free rate -->
+    <div class="assumption-card" id="risk-free">
+      <div class="row">
+        <h3 style="margin:0;">Risk-Free Rate</h3>
+        <span class="pill pill-green">Auto: live 10-yr Treasury (^TNX)</span>
+      </div>
+      <p>
+        The return on a theoretically risk-free investment — the baseline in CAPM. The tool
+        pulls the <strong>current 10-year US Treasury yield</strong> live from Yahoo Finance at
+        run time, so it always reflects prevailing interest rates without manual input.
+      </p>
+      <p>
+        Override with <code>--risk-free 0.043</code> to freeze a specific rate for
+        comparability across runs. If the live fetch fails, the tool falls back to 4.0% and
+        logs a warning.
+      </p>
+    </div>
+
+    <!-- Beta -->
+    <div class="assumption-card" id="beta">
+      <div class="row">
+        <h3 style="margin:0;">Beta</h3>
+        <span class="pill pill-green">Auto: 5-yr monthly vs. S&amp;P 500</span>
+        <span class="pill pill-blue">Fallback: 1.0</span>
+      </div>
+      <p>
+        Beta measures how much a stock moves relative to the overall market. A beta of 1.0
+        means it tracks the market; 1.5 means 50% more volatile. Higher beta → higher cost of
+        equity → higher WACC → lower intrinsic value.
+      </p>
+      <p>
+        The tool fetches the <strong>5-year monthly regression beta</strong> from Yahoo Finance,
+        the most common convention in equity research. Override with <code>--beta 1.2</code>
+        when historical beta is unrepresentative — e.g., after a major restructuring, a spinoff,
+        or when you prefer an industry-average unlevered beta.
+      </p>
+      <p>
+        <strong>Fallback: 1.0</strong> (market-average risk) when data is unavailable.
+      </p>
+    </div>
+
+    <!-- WACC override -->
+    <div class="assumption-card" id="wacc">
+      <div class="row">
+        <h3 style="margin:0;">WACC Override</h3>
+        <span class="pill pill-blue">Default: null (auto-computed)</span>
+      </div>
+      <p>
+        Bypasses the entire CAPM-based WACC calculation and forces a fixed discount rate.
+        The auto-computed WACC is grounded in observed market data and should be preferred.
+      </p>
+      <p>
+        Use this sparingly — mainly to match a specific analyst's model or apply an
+        industry-standard rate for comparability. Example: <code>--wacc 0.09</code> forces
+        a 9% discount rate regardless of beta, leverage, or prevailing rates.
+      </p>
+    </div>
+
+    <!-- Tax rate -->
+    <div class="assumption-card" id="tax-rate">
+      <div class="row">
+        <h3 style="margin:0;">Tax Rate</h3>
+        <span class="pill pill-green">Auto: computed from filings</span>
+        <span class="pill pill-blue">Fallback: 21%</span>
+      </div>
+      <p>
+        The effective corporate tax rate applied to EBIT to convert operating income into
+        after-tax cash flow (NOPAT). The tool computes this from actual filings:
+        <code>Income Tax Expense ÷ Pretax Income</code> averaged across all profitable
+        historical years, smoothing year-to-year volatility.
+      </p>
+      <p>
+        This is more accurate than the US statutory 21% rate because it captures actual
+        deductions, credits, and international tax structures. The <strong>21% fallback</strong>
+        (the Tax Cuts and Jobs Act of 2017 US corporate statutory rate) applies only when tax
+        data is missing from filings.
+      </p>
+      <p>
+        Override with <code>--tax-rate 0.15</code> for companies with structural tax advantages
+        (e.g., heavy R&amp;D credits, IP held in low-tax jurisdictions).
+      </p>
+    </div>
+
+    <!-- Base FCF method -->
+    <div class="assumption-card" id="base-fcf-method">
+      <div class="row">
+        <h3 style="margin:0;">Base FCF Method</h3>
+        <span class="pill pill-blue">Default: trailing</span>
+      </div>
+      <p>Controls how the starting point for projections is estimated. Two options:</p>
+      <ul>
+        <li>
+          <strong>Trailing</strong> (default): 3-year trailing average of actual FCF.
+          Works well for stable, predictable businesses.
+        </li>
+        <li>
+          <strong>Normalized</strong>: Designed for <strong>cyclical companies</strong>
+          (semiconductor memory, commodities, oil &amp; gas). Computes the average FCF
+          margin (FCF ÷ Revenue) across the full history — capturing mid-cycle
+          profitability — then applies that margin to the most recent revenue figure.
+          This avoids anchoring the model on a boom or bust year. Use for names like
+          MU, FCX, or CVX.
+        </li>
+      </ul>
+    </div>
+
+    <!-- Base FCF years -->
+    <div class="assumption-card" id="base-fcf-years">
+      <div class="row">
+        <h3 style="margin:0;">Base FCF Averaging Window</h3>
+        <span class="pill pill-blue">Default: 3 years</span>
+      </div>
+      <p>
+        When using the <em>trailing</em> method, the tool averages the last N years of FCF
+        rather than anchoring on a single year. This dampens distortions from lumpy CapEx
+        cycles, one-time working-capital swings, or acquisitions.
+      </p>
+      <p>
+        Set to 1 to use only the most recent year — appropriate when the latest year is
+        genuinely the best representation of run-rate earnings (e.g., after a major business
+        transformation or divestiture).
+      </p>
+    </div>
+
+    <!-- Initial growth -->
+    <div class="assumption-card" id="growth-override">
+      <div class="row">
+        <h3 style="margin:0;">Initial FCF Growth Rate</h3>
+        <span class="pill pill-green">Auto: historical FCF CAGR</span>
+      </div>
+      <p>
+        The first-year growth rate seeding the projection. By default it is computed as the
+        compound annual growth rate (CAGR) of historical FCF, clamped to the guardrail band.
+        Growth is then linearly faded to the terminal growth rate across the forecast horizon
+        — the model never assumes the current growth rate lasts forever.
+      </p>
+      <p>
+        Override with <code>--growth 0.10</code> when the historical CAGR is an unreliable
+        signal — e.g., a large acquisition makes the FCF history non-comparable, or consensus
+        analyst estimates are materially different from the historical trend.
+      </p>
+      <p>
+        For <em>normalized</em> cyclical companies, growth is seeded from the <strong>revenue
+        CAGR</strong> instead (steadier than the FCF CAGR), assuming the mid-cycle margin holds.
+      </p>
+    </div>
+
+    <!-- Guardrails -->
+    <div class="assumption-card" id="guardrails">
+      <div class="row">
+        <h3 style="margin:0;">Growth Guardrails</h3>
+        <span class="pill pill-blue">Max: 15%</span>
+        <span class="pill pill-blue">Min: −5%</span>
+      </div>
+      <p>
+        Hard caps applied to the auto-derived initial growth rate regardless of what the
+        historical CAGR implies.
+      </p>
+      <ul>
+        <li>
+          <strong>15% ceiling:</strong> Prevents a company with a great recent run from being
+          projected at an unsustainable pace. Even elite compounders rarely sustain &gt;15%
+          FCF growth long enough to be the right base assumption.
+        </li>
+        <li>
+          <strong>−5% floor:</strong> Prevents a temporary FCF dip (heavy investment year,
+          recession trough) from projecting permanent decline. If the business is genuinely
+          in structural decline, override growth manually.
+        </li>
+      </ul>
+    </div>
+
+    <!-- History years -->
+    <div class="assumption-card" id="history-years">
+      <div class="row">
+        <h3 style="margin:0;">History Years</h3>
+        <span class="pill pill-blue">Default: 10</span>
+      </div>
+      <p>
+        How many years of annual filings to pull from EDGAR when computing historical trends.
+        Ten years captures at least one full economic cycle — important for a stable FCF CAGR
+        and tax rate estimate. SEC XBRL data typically goes back to 2009, making 10 years
+        effectively the practical maximum for most companies.
+      </p>
+    </div>
+
+    <!-- Fallbacks -->
+    <div class="assumption-card" id="fallbacks">
+      <h3 style="margin:0 0 10px;">Fallback Values (when data is missing)</h3>
+      <ul>
+        <li><strong>Risk-free rate:</strong> 4.0% (logged as a warning)</li>
+        <li><strong>Beta:</strong> 1.0 (market-average)</li>
+        <li><strong>Tax rate:</strong> 21% (US statutory)</li>
+        <li><strong>Cost of debt:</strong> 5.0% (solid investment-grade rate)</li>
+      </ul>
+      <p>
+        Fallbacks are always logged in the report's <em>Notes</em> section so you know when
+        they've been applied.
+      </p>
+    </div>
+
+    <!-- ── Charts ────────────────────────────────────────────────── -->
+    <h2 id="charts">Charts</h2>
+    <p>The report includes up to six charts. Here is what each shows and how to read it.</p>
+
+    <!-- Chart 1 -->
+    <div class="chart-card" id="chart-history">
+      <h3>1 · Historical Revenue &amp; Free Cash Flow</h3>
+      <p>
+        <strong>What it shows:</strong> Blue bars are annual revenue. The green line (with dots)
+        is free cash flow — both in billions of dollars, going back up to 10 years.
+      </p>
+      <p>
+        <strong>How to read it:</strong> Revenue tells you how fast the company has been growing
+        its top line. The FCF line tells you how much of that revenue translated into actual cash
+        for shareholders after all operating costs, taxes, and reinvestment. A widening gap where
+        FCF grows faster than revenue signals improving capital efficiency. A flat or declining FCF
+        line against growing revenue signals the company is consuming cash to grow. This chart is
+        the foundation — the model's projections are grounded in this history.
+      </p>
+    </div>
+
+    <!-- Chart 2 -->
+    <div class="chart-card" id="chart-projection">
+      <h3>2 · Projected FCF vs. Present Value</h3>
+      <p>
+        <strong>What it shows:</strong> Two overlapping bars for each forecast year. Taller blue
+        bars are raw projected FCF in each year ($B). Narrower green bars are what those same
+        cash flows are worth <em>today</em> — discounted back to the present using WACC.
+      </p>
+      <p>
+        <strong>How to read it:</strong> This makes the time-value of money visible. A dollar of
+        FCF in Year 5 is worth less than a dollar today because of risk and opportunity cost —
+        that's what WACC captures. The shrinking green bars show exactly how much discounting
+        erodes distant cash flows. If the green bars in Years 4–5 are very small relative to
+        Year 1, the valuation is dominated by near-term earnings and the terminal value, not
+        the mid-period growth story.
+      </p>
+    </div>
+
+    <!-- Chart 3 -->
+    <div class="chart-card" id="chart-bridge">
+      <h3>3 · Enterprise Value → Equity Value Bridge</h3>
+      <p>
+        <strong>What it shows:</strong> A waterfall chart: Enterprise Value → minus Debt
+        → plus Cash &amp; Investments → Equity Value. All in $B.
+      </p>
+      <p>
+        <strong>How to read it:</strong> Enterprise Value is what the entire business is worth
+        as if you bought it free of any financing. But shareholders don't own it free and clear —
+        debt holders have a prior claim. Subtracting debt and adding back cash gives the
+        <strong>equity value</strong>: what's left for shareholders. Dividing by shares gives the
+        per-share intrinsic value. This chart makes it transparent whether a large spread between
+        enterprise value and equity value is due to heavy leverage or simply a large cash hoard.
+      </p>
+    </div>
+
+    <!-- Chart 4 -->
+    <div class="chart-card" id="chart-sensitivity">
+      <h3>4 · Sensitivity Analysis Heatmap</h3>
+      <p>
+        <strong>What it shows:</strong> A 5×5 grid where each cell is an intrinsic value per
+        share. The Y-axis varies WACC (±2% around the base case). The X-axis varies terminal
+        growth (±1% around the base case). Green = higher value; red = lower value.
+      </p>
+      <p>
+        <strong>How to read it:</strong> No DCF assumption is known with certainty. This chart
+        is the honest answer to "how confident are you?" The center cell is the base-case
+        estimate. If the current stock price sits comfortably in the green zone even in the
+        top-left corner (high WACC, low growth), the stock looks cheap under almost any
+        reasonable assumption. If it only looks attractive in the bottom-right corner (low WACC,
+        high growth), the bull case depends on everything going right.
+      </p>
+      <p>
+        A smart use of this chart: mark where the current market price falls on the color
+        scale. That reveals what assumptions the market is <em>implicitly</em> pricing in.
+      </p>
+    </div>
+
+    <!-- Chart 5 -->
+    <div class="chart-card" id="chart-price">
+      <h3>5 · Price vs. Intrinsic Value</h3>
+      <p>
+        <strong>What it shows:</strong> Two bars side by side — current market price per share
+        (gray) and the model's intrinsic value per share (green if undervalued, red if
+        overvalued). Percentage upside or downside is shown in the title.
+      </p>
+      <p>
+        <strong>How to read it:</strong> This is the bottom line. The model says the stock is
+        worth $X; the market is paying $Y. Green bar taller than gray = the model sees an
+        undervalued stock. Red bar shorter than gray = the market is pricing in more optimism
+        than the model's assumptions justify. Always cross-reference with the sensitivity heatmap
+        to understand how robust the conclusion is.
+      </p>
+    </div>
+
+    <!-- Chart 6 -->
+    <div class="chart-card" id="chart-comparison">
+      <h3>6 · Comparison Chart (multi-ticker runs only)</h3>
+      <p>
+        <strong>What it shows:</strong> A horizontal bar chart ranking all valued tickers by
+        implied upside/downside vs. their current market price. Bars to the right (green) are
+        undervalued; bars to the left (red) are overvalued. Tickers that could not be valued
+        are listed separately.
+      </p>
+      <p>
+        <strong>How to read it:</strong> A relative ranking tool. It answers "across the stocks
+        I'm considering, which does this model flag as most attractively priced?" Useful for
+        portfolio construction or capital allocation decisions. Important caveat: stocks with
+        very high implied upside often carry a higher WACC (more risk), not necessarily a better
+        business. Always read the upside figure alongside the individual company's assumptions.
+      </p>
+    </div>
+
+    <!-- ── Limitations ───────────────────────────────────────────── -->
+    <h2 id="limitations">When Not to Trust It</h2>
+    <div class="limit-box">
+      <h3>Limitations &amp; Edge Cases</h3>
+      <ul>
+        <li>
+          <strong>FCF-negative companies</strong> cannot be valued with this model (early-stage,
+          deeply cyclical at a trough, or distressed businesses). The tool will say so explicitly
+          rather than produce a misleading negative number.
+        </li>
+        <li>
+          <strong>Financial companies</strong> (banks, insurers, brokers — SIC 6000–6499) are
+          excluded. They have no meaningful distinction between operating and financing cash flows,
+          making FCFF-based DCF inapplicable.
+        </li>
+        <li>
+          <strong>Foreign filers</strong> are supported via IFRS 20-F filings, but IFRS tagging
+          is less standardized and figures may be noisier. All amounts are converted to USD using
+          the current spot FX rate — a simplification that preserves growth rates but rescales
+          absolute levels.
+        </li>
+        <li>
+          <strong>Terminal value dominates:</strong> In a 5-year DCF, the terminal value typically
+          represents 60–80% of total enterprise value. This means terminal growth rate changes
+          have an outsized effect on fair value — use the sensitivity chart to understand this
+          exposure before drawing conclusions.
+        </li>
+        <li>
+          <strong>yfinance is unofficial</strong> — Yahoo Finance data (beta, price, market cap)
+          is crowd-sourced and may lag or contain errors. Verify key figures before relying on
+          them.
+        </li>
+      </ul>
+      <p style="margin:12px 0 0;font-size:.88rem;color:#7f1d1d;">
+        <strong>Educational use only — not investment advice.</strong>
+      </p>
+    </div>
+
+  </div><!-- .content -->
+</div><!-- .layout -->
+
+<footer>DCF Stock Valuation Tool — Educational use only</footer>
+
+<script>
+  // Highlight active TOC link on scroll
+  const sections = document.querySelectorAll('[id]');
+  const tocLinks = document.querySelectorAll('aside a[href^="#"]');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        tocLinks.forEach(l => l.classList.remove('active'));
+        const link = document.querySelector(`aside a[href="#${e.target.id}"]`);
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>

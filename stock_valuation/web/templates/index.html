@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DCF Valuation</title>
+<style>
+  :root { --accent:#2563eb; --ink:#111827; --muted:#6b7280; --line:#e5e7eb; --bg:#f9fafb; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+         color: var(--ink); margin: 0; background: var(--bg); line-height: 1.5; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-size: 1.8rem; margin: 0 0 6px; }
+  .sub { color: var(--muted); margin: 0 0 28px; }
+  form { background:#fff; border:1px solid var(--line); border-radius:14px; padding: 28px; }
+  label { display:block; font-weight:600; font-size:.9rem; margin-bottom:6px; }
+  .hint { color: var(--muted); font-weight:400; font-size:.8rem; }
+  input[type=text], input[type=number], select {
+    width:100%; padding:11px 13px; border:1px solid var(--line); border-radius:9px;
+    font-size:1rem; background:#fff; }
+  input:focus, select:focus { outline:2px solid var(--accent); border-color:var(--accent); }
+  .tickers { font-size:1.15rem; letter-spacing:.04em; text-transform:uppercase; }
+  details { margin-top:22px; border-top:1px solid var(--line); padding-top:18px; }
+  summary { cursor:pointer; font-weight:600; color:var(--accent); }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:18px; }
+  @media (max-width:560px){ .grid{ grid-template-columns:1fr; } }
+  .field { margin:0; }
+  button { margin-top:24px; width:100%; padding:13px; font-size:1.05rem; font-weight:650;
+    color:#fff; background:var(--accent); border:0; border-radius:10px; cursor:pointer; }
+  button:hover { background:#1d4ed8; }
+  .err { background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; padding:12px 14px;
+    border-radius:9px; margin-bottom:18px; font-size:.9rem; }
+  .spinner { display:none; margin-top:16px; text-align:center; color:var(--muted); font-size:.9rem; }
+  footer { color:var(--muted); font-size:.8rem; text-align:center; margin-top:22px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>DCF Stock Valuation</h1>
+  <p class="sub">Enter one or more tickers. Data from SEC EDGAR + Yahoo Finance.</p>
+
+  {% if error %}<div class="err">{{ error }}</div>{% endif %}
+
+  <form method="post" action="{{ url_for('value') }}" onsubmit="document.getElementById('spin').style.display='block';">
+    <label for="tickers">Ticker symbol(s)
+      <span class="hint">— separate with spaces or commas, e.g. AAPL MSFT CAT</span>
+    </label>
+    <input class="tickers" type="text" id="tickers" name="tickers"
+           placeholder="AAPL MSFT NVDA" autofocus required>
+
+    <details>
+      <summary>Assumptions (optional) — leave blank to auto-derive</summary>
+      <div class="grid">
+        <div class="field">
+          <label for="projection_years">Forecast years (n)</label>
+          <input type="number" id="projection_years" name="projection_years"
+                 min="1" max="20" step="1" placeholder="5">
+        </div>
+        <div class="field">
+          <label for="terminal_growth">Terminal growth %</label>
+          <input type="number" id="terminal_growth" name="terminal_growth"
+                 step="0.1" placeholder="2.5">
+        </div>
+        <div class="field">
+          <label for="equity_risk_premium">Equity risk premium %</label>
+          <input type="number" id="equity_risk_premium" name="equity_risk_premium"
+                 step="0.1" placeholder="5.0">
+        </div>
+        <div class="field">
+          <label for="wacc_override">WACC override %
+            <span class="hint">(else CAPM)</span></label>
+          <input type="number" id="wacc_override" name="wacc_override"
+                 step="0.1" placeholder="auto">
+        </div>
+        <div class="field">
+          <label for="base_fcf_method">Base FCF method</label>
+          <select id="base_fcf_method" name="base_fcf_method">
+            <option value="">Trailing average (default)</option>
+            <option value="normalized">Normalized — mid-cycle (cyclicals)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="history_years">History years</label>
+          <input type="number" id="history_years" name="history_years"
+                 min="2" max="20" step="1" placeholder="10">
+        </div>
+      </div>
+    </details>
+
+    <button type="submit">Get valuation</button>
+    <div id="spin" class="spinner">Pulling filings &amp; computing… this can take a few seconds per stock.</div>
+  </form>
+
+  <footer>Educational use only — not investment advice. &nbsp;·&nbsp;
+    <a href="{{ url_for('docs') }}" style="color:var(--accent);">Documentation</a>
+  </footer>
+</div>
+</body>
+</html>

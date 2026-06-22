@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ ticker }} — DCF Valuation</title>
+<style>
+  :root { --accent:#2563eb; --pos:#16a34a; --neg:#dc2626; --ink:#111827; --muted:#6b7280; --line:#e5e7eb; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+         color: var(--ink); margin: 0; background: #f9fafb; line-height: 1.5; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 32px 24px 64px; }
+  header h1 { margin: 0 0 4px; font-size: 1.7rem; }
+  header .sub { color: var(--muted); margin: 0 0 24px; }
+  .hero { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 28px; }
+  .kpi { background: #fff; border: 1px solid var(--line); border-radius: 12px;
+         padding: 16px 20px; flex: 1 1 150px; }
+  .kpi .label { color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing:.03em; }
+  .kpi .value { font-size: 1.5rem; font-weight: 650; margin-top: 4px; }
+  .pos { color: var(--pos); } .neg { color: var(--neg); }
+  section { background:#fff; border:1px solid var(--line); border-radius:12px;
+            padding: 20px 24px; margin-bottom: 22px; }
+  h2 { font-size: 1.1rem; margin: 0 0 14px; }
+  img { max-width: 100%; height: auto; display:block; margin: 0 auto; }
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  th, td { text-align: right; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+  th:first-child, td:first-child { text-align: left; }
+  thead th { color: var(--muted); font-weight: 600; }
+  .notes { font-size: .85rem; color: var(--muted); }
+  .notes li { margin-bottom: 3px; }
+  footer { color: var(--muted); font-size: .8rem; text-align:center; margin-top: 16px; }
+  .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 720px){ .grid2{ grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>{{ company_name }} ({{ ticker }})</h1>
+    <p class="sub">Discounted Cash Flow valuation · generated {{ generated_at }} · data: SEC EDGAR + Yahoo Finance</p>
+  </header>
+
+  <div class="hero">
+    <div class="kpi">
+      <div class="label">Intrinsic value / share</div>
+      <div class="value">${{ "%.2f"|format(dcf.intrinsic_per_share) }}</div>
+    </div>
+    {% if dcf.current_price %}
+    <div class="kpi">
+      <div class="label">Market price</div>
+      <div class="value">${{ "%.2f"|format(dcf.current_price) }}</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Upside / downside</div>
+      <div class="value {{ 'pos' if dcf.upside >= 0 else 'neg' }}">{{ "%+.1f%%"|format(dcf.upside * 100) }}</div>
+    </div>
+    {% endif %}
+    <div class="kpi">
+      <div class="label">WACC (r)</div>
+      <div class="value">{{ "%.2f%%"|format(dcf.wacc * 100) }}</div>
+    </div>
+  </div>
+
+  <section>
+    <h2>Valuation summary</h2>
+    <table>
+      <tbody>
+        <tr><td>Enterprise value</td><td>${{ "{:,.0f}".format(dcf.enterprise_value/1e6) }} M</td></tr>
+        <tr><td>PV of forecast FCF</td><td>${{ "{:,.0f}".format(dcf.pv_explicit/1e6) }} M</td></tr>
+        <tr><td>PV of terminal value</td><td>${{ "{:,.0f}".format(dcf.pv_terminal/1e6) }} M</td></tr>
+        <tr><td>– Total debt</td><td>${{ "{:,.0f}".format(dcf.total_debt/1e6) }} M</td></tr>
+        <tr><td>+ Cash &amp; investments</td><td>${{ "{:,.0f}".format(dcf.cash/1e6) }} M</td></tr>
+        <tr><td><strong>Equity value</strong></td><td><strong>${{ "{:,.0f}".format(dcf.equity_value/1e6) }} M</strong></td></tr>
+        <tr><td>Shares outstanding</td><td>{{ "{:,.0f}".format(dcf.shares/1e6) }} M</td></tr>
+        <tr><td><strong>Intrinsic value / share</strong></td><td><strong>${{ "%.2f"|format(dcf.intrinsic_per_share) }}</strong></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Historical performance</h2>
+    <img src="{{ charts.history }}" alt="Historical revenue and FCF">
+  </section>
+
+  <section>
+    <h2>Cash-flow projection</h2>
+    <img src="{{ charts.projection }}" alt="Projected FCF vs present value">
+  </section>
+
+  <div class="grid2">
+    <section>
+      <h2>Value bridge</h2>
+      <img src="{{ charts.bridge }}" alt="EV to equity bridge">
+    </section>
+    <section>
+      <h2>Price vs. value</h2>
+      <img src="{{ charts.price }}" alt="Price vs intrinsic value">
+    </section>
+  </div>
+
+  <section>
+    <h2>Sensitivity analysis</h2>
+    <img src="{{ charts.sensitivity }}" alt="WACC vs terminal growth sensitivity">
+  </section>
+
+  <section>
+    <h2>Key assumptions</h2>
+    <table>
+      <tbody>
+        <tr><td>Forecast horizon (n)</td><td>{{ assumptions.projection_years }} years</td></tr>
+        <tr><td>Initial FCF growth</td><td>{{ "%.1f%%"|format(projection.initial_growth * 100) }}</td></tr>
+        <tr><td>Terminal growth (g)</td><td>{{ "%.1f%%"|format(dcf.terminal_growth * 100) }}</td></tr>
+        <tr><td>WACC (r)</td><td>{{ "%.2f%%"|format(dcf.wacc * 100) }}</td></tr>
+        <tr><td>Cost of equity (CAPM)</td><td>{{ "%.2f%%"|format(wacc.cost_of_equity * 100) }}</td></tr>
+        <tr><td>After-tax cost of debt</td><td>{{ "%.2f%%"|format(wacc.cost_of_debt_after_tax * 100) }}</td></tr>
+        <tr><td>Beta</td><td>{{ "%.2f"|format(wacc.beta) }}</td></tr>
+        <tr><td>Risk-free rate</td><td>{{ "%.2f%%"|format(wacc.risk_free * 100) }}</td></tr>
+        <tr><td>Equity risk premium</td><td>{{ "%.2f%%"|format(wacc.equity_risk_premium * 100) }}</td></tr>
+        <tr><td>Effective tax rate</td><td>{{ "%.1f%%"|format(fcf_history.effective_tax_rate * 100) }}</td></tr>
+        <tr><td>FCF method</td><td>{{ fcf_history.method }}</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  {% if notes %}
+  <section>
+    <h2>Data quality &amp; notes</h2>
+    <ul class="notes">
+      {% for note in notes %}<li>{{ note }}</li>{% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  <footer>
+    Educational use only — not investment advice. Fundamentals from SEC EDGAR XBRL;
+    market data from Yahoo Finance (unofficial). Verify before relying on these figures.
+  </footer>
+</div>
+</body>
+</html>

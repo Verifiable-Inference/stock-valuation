@@ -1,0 +1,53 @@
+# Default DCF assumptions. Every value here can be overridden on the CLI
+# (e.g. --terminal-growth 0.025) or per-ticker in the `overrides` block below.
+
+defaults:
+  # Number of explicit forecast years (n in the PV formula).
+  projection_years: 5
+
+  # How many years of historical annual data to pull from EDGAR for trend estimation.
+  history_years: 10
+
+  # Base FCF is the trailing average of this many years (dampens lumpy ΔNWC/capex).
+  # Set to 1 to use only the latest year.
+  base_fcf_years: 3
+
+  # How the base FCF is estimated:
+  #   "trailing"   - trailing-average FCF (default; good for stable firms)
+  #   "normalized" - mid-cycle FCF margin × latest revenue, grown at revenue CAGR
+  #                  (use for cyclical names like memory/commodities)
+  base_fcf_method: trailing
+
+  # Perpetual growth rate used in the Gordon-growth terminal value.
+  terminal_growth: 0.025
+
+  # Equity risk premium (market return - risk free) used in CAPM.
+  equity_risk_premium: 0.05
+
+  # Optional hard overrides. Leave null to auto-derive from data.
+  risk_free_override: null      # e.g. 0.043 to force a 4.3% risk-free rate
+  tax_rate_override: null       # e.g. 0.21 to force a 21% tax rate
+  beta_override: null           # e.g. 1.1
+  wacc_override: null           # e.g. 0.09 to bypass CAPM entirely
+  growth_override: null         # e.g. 0.08 to force first-year FCF growth
+
+  # Guardrails applied to the auto-derived first-year FCF growth.
+  max_growth: 0.15
+  min_growth: -0.05
+
+  # Fallback effective tax rate if it cannot be computed from filings.
+  fallback_tax_rate: 0.21
+
+  # Fallback cost of debt if interest expense / debt is unavailable.
+  fallback_cost_of_debt: 0.05
+
+  # Fallback beta if market data lacks it.
+  fallback_beta: 1.0
+
+# Per-ticker overrides. Any key from `defaults` may be set here.
+# Example:
+# overrides:
+#   AAPL:
+#     terminal_growth: 0.03
+#     projection_years: 7
+overrides: {}
