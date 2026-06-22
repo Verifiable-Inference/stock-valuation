@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 # EDGAR requires a descriptive User-Agent with a contact email; 403 otherwise.
 # Email is the user's, per the session context.
-USER_AGENT = "stock-valuation-tool lespinsj@gmail.com"
+USER_AGENT = "stock-valuation-tool verifiable-inference@proton.me"
 
 _TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
 _FACTS_URL = "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik:010d}.json"
