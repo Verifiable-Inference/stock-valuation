@@ -111,16 +111,19 @@
       expand <strong>Assumptions</strong>, and try one or more of these:
     </p>
     <ol style="margin:0; padding-left:1.3em; font-size:.92rem; color:#7f1d1d; line-height:1.8;">
+      {% if assumptions.base_fcf_years > 1 %}
       <li><strong>Set "Base FCF years" to 1.</strong> The model averaged the last
-        {{ assumptions.base_fcf_years }} years of cash flow
-        (arriving at ${{ "{:,.0f}M".format(projection.base_fcf / 1e6) }}). If this company's cash flow
+        {{ assumptions.base_fcf_years }} {{ "year" if assumptions.base_fcf_years == 1 else "years" }} of cash flow
+        (base: ${{ "{:,.0f}M".format(projection.base_fcf / 1e6) }}). If this company's cash flow
         has been growing fast, older years drag the average way down. Setting this to 1 uses only the
         most recent year — check the Historical FCF table below to see if recent years are much higher.</li>
+      {% endif %}
       <li><strong>Set "Growth override %" to a higher number</strong> (e.g. 30 for 30% growth).
-        The model auto-derived {{ "%.0f%%"|format(projection.initial_growth * 100) }}% growth.
+        The model used {{ "%.0f"|format(projection.initial_growth * 100) }}% growth
+        (cap: {{ "%.0f"|format(assumptions.max_growth * 100) }}%).
         If analysts expect this company to grow faster in the near term, enter that number here.</li>
       <li><strong>Set "WACC override %" to a lower number</strong> (e.g. 9 or 10).
-        The current discount rate is {{ "%.1f%%"|format(dcf.wacc * 100) }}%, driven by a high beta of
+        The current discount rate is {{ "%.1f"|format(dcf.wacc * 100) }}%, driven by a beta of
         {{ "%.2f"|format(wacc.beta) }}. A lower number assumes the market views this stock as less risky,
         and will significantly raise the intrinsic value. Or set <strong>"Beta override"</strong> to a
         lower value (e.g. 1.2) and let the model recompute the discount rate from there.</li>
