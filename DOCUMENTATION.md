@@ -119,11 +119,11 @@ Forces a specific first-year FCF growth rate, bypassing the historical CAGR calc
 ---
 
 ### 12. Growth Guardrails (`max_growth` / `min_growth`)
-**Defaults: max 15%, min −5%**
+**Defaults: max 25%, min −5%**
 
-Hard caps applied to the auto-derived initial FCF growth rate. No matter what the historical CAGR implies, the model will not project growth above 15% or below −5% per year.
+Hard caps applied to the auto-derived initial FCF growth rate. No matter what the historical CAGR implies, the model will not project growth above 25% or below −5% per year.
 
-- **15% ceiling**: Prevents a company that happened to have a great run from being projected at an unsustainable pace indefinitely. Even elite compounders rarely sustain >15% FCF growth long enough for it to be the right base assumption.
+- **25% ceiling**: Prevents a company that happened to have a great run from being projected at an unsustainable pace indefinitely. The ceiling was raised from 15% to 25% to better accommodate high-growth secular trends (e.g., AI infrastructure build-out) where near-term consensus estimates meaningfully exceed 15%.
 - **−5% floor**: Prevents a temporary FCF dip (a heavy investment year, a recession) from projecting permanent decline. If the business is genuinely in structural decline, override growth manually.
 
 ---

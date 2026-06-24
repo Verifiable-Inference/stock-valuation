@@ -103,11 +103,62 @@
     <img src="{{ charts.sensitivity }}" alt="WACC vs terminal growth sensitivity">
   </section>
 
+  {% if dcf.current_price and dcf.upside is not none and dcf.upside < -0.5 %}
+  <section style="border-color:#fecaca; background:#fef2f2;">
+    <h2 style="color:#b91c1c;">Large divergence from market price</h2>
+    <p style="margin:0; font-size:.92rem; color:#7f1d1d; line-height:1.6;">
+      The model's intrinsic value is <strong>{{ "%+.0f%%"|format(dcf.upside * 100) }}</strong> vs. the market price.
+      This often reflects one or more of the following: <strong>(1) the trailing FCF average understates a
+      rapidly-growing company's current run rate</strong> — check the Historical FCF table below and consider
+      re-running with <code>--base-fcf-years 1</code>; <strong>(2) the growth cap
+      ({{ "%.0f%%"|format(assumptions.max_growth * 100) }})</strong> is below the company's near-term
+      consensus growth — override with <code>--growth</code>; <strong>(3) a high beta drives a
+      high WACC ({{ "%.2f%%"|format(dcf.wacc * 100) }})</strong>, implying more risk than the market
+      currently prices in — override with <code>--wacc</code> or <code>--beta</code>.
+    </p>
+  </section>
+  {% endif %}
+
+  <section>
+    <h2>Historical free cash flow</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Year</th>
+          {% if fcf_history.method == "fcff" %}
+          <th>NOPAT</th><th>D&amp;A</th><th>CapEx</th><th>ΔNWC</th>
+          {% endif %}
+          <th>FCF</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in fcf_rows %}
+        <tr>
+          <td>{{ r.year }}</td>
+          {% if fcf_history.method == "fcff" %}
+          <td>{{ "${:,.0f}M".format(r.nopat / 1e6) if r.nopat == r.nopat else "—" }}</td>
+          <td>{{ "${:,.0f}M".format(r.dep_amort / 1e6) if r.dep_amort == r.dep_amort else "—" }}</td>
+          <td>{{ "${:,.0f}M".format(r.capex / 1e6) if r.capex == r.capex else "—" }}</td>
+          <td>{{ "${:,.0f}M".format(r.delta_nwc / 1e6) if r.delta_nwc == r.delta_nwc else "—" }}</td>
+          {% endif %}
+          <td><strong>{{ "${:,.0f}M".format(r.fcff / 1e6) if r.fcff == r.fcff else "—" }}</strong></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p style="font-size:.82rem; color:var(--muted); margin:10px 0 0;">
+      Method: <strong>{{ fcf_history.method }}</strong>.
+      Base FCF used for projections: <strong>${{ "{:,.0f}M".format(projection.base_fcf / 1e6) }}</strong>
+      ({{ assumptions.base_fcf_method }} {% if assumptions.base_fcf_method == "trailing" %}{{ assumptions.base_fcf_years }}-year average{% endif %}).
+    </p>
+  </section>
+
   <section>
     <h2>Key assumptions</h2>
     <table>
       <tbody>
         <tr><td>Forecast horizon (n)</td><td>{{ assumptions.projection_years }} years</td></tr>
+        <tr><td>Base FCF (projection anchor)</td><td>${{ "{:,.0f}M".format(projection.base_fcf / 1e6) }}</td></tr>
         <tr><td>Initial FCF growth</td><td>{{ "%.1f%%"|format(projection.initial_growth * 100) }}</td></tr>
         <tr><td>Terminal growth (g)</td><td>{{ "%.1f%%"|format(dcf.terminal_growth * 100) }}</td></tr>
         <tr><td>WACC (r)</td><td>{{ "%.2f%%"|format(dcf.wacc * 100) }}</td></tr>
@@ -118,6 +169,7 @@
         <tr><td>Equity risk premium</td><td>{{ "%.2f%%"|format(wacc.equity_risk_premium * 100) }}</td></tr>
         <tr><td>Effective tax rate</td><td>{{ "%.1f%%"|format(fcf_history.effective_tax_rate * 100) }}</td></tr>
         <tr><td>FCF method</td><td>{{ fcf_history.method }}</td></tr>
+        <tr><td>Growth cap (max)</td><td>{{ "%.0f%%"|format(assumptions.max_growth * 100) }}</td></tr>
       </tbody>
     </table>
   </section>

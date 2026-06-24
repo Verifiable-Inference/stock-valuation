@@ -122,6 +122,20 @@ def project_fcf(
         notes.append(
             f"Base FCF is non-positive ({base_fcf:,.0f}); valuation may be unreliable"
         )
+    # Warn when a rapidly-growing company's most recent FCF is well above the
+    # trailing average — the average understates current run rate in this case.
+    if base_fcf_method != "normalized":
+        clean_fcf = fcf_history.dropna()
+        if len(clean_fcf) >= 1 and base_fcf > 0:
+            latest = float(clean_fcf.iloc[-1])
+            if latest > 1.5 * base_fcf:
+                notes.append(
+                    f"Warning: most recent FCF (${latest/1e9:,.1f}B) is "
+                    f"{latest/base_fcf:.1f}× the trailing average base "
+                    f"(${base_fcf/1e9:,.1f}B). The trailing average may significantly "
+                    f"understate current run rate. Consider --base-fcf-years 1 to "
+                    f"anchor on the most recent year instead."
+                )
 
     if growth_override is not None:
         initial_growth = growth_override

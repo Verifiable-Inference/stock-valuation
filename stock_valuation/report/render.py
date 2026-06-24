@@ -35,6 +35,18 @@ def report_html(result: "ValuationResult", generated_at: str) -> str:
         "price": charts.price_vs_value_chart(result),
         "sensitivity": charts.sensitivity_chart(result),
     }
+    tbl = result.fcf_history.table
+    fcf_rows = [
+        {
+            "year": int(year),
+            "fcff": row["fcff"] if "fcff" in row.index else float("nan"),
+            "nopat": row.get("nopat", float("nan")),
+            "dep_amort": row.get("dep_amort", float("nan")),
+            "capex": row.get("capex", float("nan")),
+            "delta_nwc": row.get("delta_nwc", float("nan")),
+        }
+        for year, row in tbl.iterrows()
+    ]
     return _env().get_template("report.html.j2").render(
         ticker=result.ticker,
         company_name=result.financials.company_name,
@@ -43,6 +55,7 @@ def report_html(result: "ValuationResult", generated_at: str) -> str:
         wacc=result.wacc,
         projection=result.projection,
         fcf_history=result.fcf_history,
+        fcf_rows=fcf_rows,
         assumptions=result.assumptions,
         charts=chart_imgs,
         notes=result.all_notes(),
