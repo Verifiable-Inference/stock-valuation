@@ -40,7 +40,14 @@ _PCT_FIELDS = {
     "wacc_override": "wacc_override",
     "growth_override": "growth_override",
 }
-_INT_FIELDS = {"projection_years": "projection_years", "history_years": "history_years"}
+_FLOAT_FIELDS = {
+    "beta_override": "beta_override",
+}
+_INT_FIELDS = {
+    "projection_years": "projection_years",
+    "history_years": "history_years",
+    "base_fcf_years": "base_fcf_years",
+}
 
 
 def _parse_tickers(raw: str) -> list[str]:
@@ -65,6 +72,13 @@ def _parse_overrides(form) -> dict[str, Any]:
         if val:
             try:
                 overrides[key] = float(val) / 100.0
+            except ValueError:
+                pass
+    for field, key in _FLOAT_FIELDS.items():
+        val = (form.get(field) or "").strip()
+        if val:
+            try:
+                overrides[key] = float(val)
             except ValueError:
                 pass
     method = (form.get("base_fcf_method") or "").strip()

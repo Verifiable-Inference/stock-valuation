@@ -105,17 +105,26 @@
 
   {% if dcf.current_price and dcf.upside is not none and dcf.upside < -0.5 %}
   <section style="border-color:#fecaca; background:#fef2f2;">
-    <h2 style="color:#b91c1c;">Large divergence from market price</h2>
-    <p style="margin:0; font-size:.92rem; color:#7f1d1d; line-height:1.6;">
-      The model's intrinsic value is <strong>{{ "%+.0f%%"|format(dcf.upside * 100) }}</strong> vs. the market price.
-      This often reflects one or more of the following: <strong>(1) the trailing FCF average understates a
-      rapidly-growing company's current run rate</strong> — check the Historical FCF table below and consider
-      re-running with <code>--base-fcf-years 1</code>; <strong>(2) the growth cap
-      ({{ "%.0f%%"|format(assumptions.max_growth * 100) }})</strong> is below the company's near-term
-      consensus growth — override with <code>--growth</code>; <strong>(3) a high beta drives a
-      high WACC ({{ "%.2f%%"|format(dcf.wacc * 100) }})</strong>, implying more risk than the market
-      currently prices in — override with <code>--wacc</code> or <code>--beta</code>.
+    <h2 style="color:#b91c1c;">Large divergence from market price ({{ "%+.0f%%"|format(dcf.upside * 100) }})</h2>
+    <p style="margin:0 0 10px; font-size:.92rem; color:#7f1d1d; line-height:1.6;">
+      The model's intrinsic value is far below the market price. To adjust, click <strong>+ New valuation</strong>,
+      expand <strong>Assumptions</strong>, and try one or more of these:
     </p>
+    <ol style="margin:0; padding-left:1.3em; font-size:.92rem; color:#7f1d1d; line-height:1.8;">
+      <li><strong>Set "Base FCF years" to 1.</strong> The model averaged the last
+        {{ assumptions.base_fcf_years }} years of cash flow
+        (arriving at ${{ "{:,.0f}M".format(projection.base_fcf / 1e6) }}). If this company's cash flow
+        has been growing fast, older years drag the average way down. Setting this to 1 uses only the
+        most recent year — check the Historical FCF table below to see if recent years are much higher.</li>
+      <li><strong>Set "Growth override %" to a higher number</strong> (e.g. 30 for 30% growth).
+        The model auto-derived {{ "%.0f%%"|format(projection.initial_growth * 100) }}% growth.
+        If analysts expect this company to grow faster in the near term, enter that number here.</li>
+      <li><strong>Set "WACC override %" to a lower number</strong> (e.g. 9 or 10).
+        The current discount rate is {{ "%.1f%%"|format(dcf.wacc * 100) }}%, driven by a high beta of
+        {{ "%.2f"|format(wacc.beta) }}. A lower number assumes the market views this stock as less risky,
+        and will significantly raise the intrinsic value. Or set <strong>"Beta override"</strong> to a
+        lower value (e.g. 1.2) and let the model recompute the discount rate from there.</li>
+    </ol>
   </section>
   {% endif %}
 
